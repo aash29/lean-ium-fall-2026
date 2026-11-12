@@ -1,9 +1,12 @@
+
 /-!
 # Seminar 2
 Propositions as types
 -/
 
 /- Implicit arguments -/
+
+
 
 def id1 : (α : Type) → α → α := λ _ x ↦ x
 
@@ -23,6 +26,7 @@ def id2 : {α : Type} → α → α := λ x ↦ x
 
 def compose {α β γ : Type} (f : α → β) (g : β → γ) :
   α → γ := λ x ↦ g (f x)
+#print compose
 
 /- Structures -/
 
@@ -68,6 +72,9 @@ structure Prod' (A B : Type) : Type where
 
 #check Prod
 #print Prod
+#print →
+
+
 #check Prod Nat Nat
 #check Nat × Nat
 
@@ -82,6 +89,8 @@ structure PointType where
 #check Prop
 #check False
 #check True
+
+#print And
 
 section CH
   axiom And' : Prop → Prop → Prop
@@ -125,12 +134,29 @@ theorem t1' : p → q → p :=
   λ hp : p ↦
   λ hq : q ↦
   show p from hp
+#print t1'
+
+theorem t1'' : p → q → p := λ hp _ ↦ hp
+
+#check λ hp _ ↦ hp
 
 theorem t2 (hp : p) : q → p := t1 hp
 
-example : p → p := sorry
-example : (p → q) → (q → r) → p → r := sorry
-example : (p → (q → r)) → (p → q) → p → r := sorry
+example : p → p := by
+  intro hp
+  exact hp
+
+
+example : (p → q) → (q → r) → p → r := by
+  intro h1 h2 h3
+  apply h2
+  apply h1
+  exact h3
+
+
+
+example : (p → (q → r)) → (p → q) → p → r :=  by
+  intro h1 h2 h3
 
 /- And -/
 #check And
@@ -216,6 +242,9 @@ example : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) :=
           have hr : r := hpr.right
           show p ∧ (q ∨ r) from ⟨hp, Or.inr hr⟩))
 
+
+
+
 /- Classical logic -/
 
 #check Classical.em
@@ -224,7 +253,24 @@ example : ¬¬ p → p :=
   λ h ↦ Or.elim (Classical.em p)
     (λ hp ↦ hp)
     (λ hnp ↦ False.elim (h hnp))
-example : ¬(p ∧ ¬q) → (p → q) := sorry
+
+
+example : ¬(p ∧ ¬q) → (p → q) := by
+  intro h1 hp
+  have qnq : q ∨ ¬q := Classical.em q
+  cases qnq
+  case inl hq =>
+    exact hq
+  case inr hnq =>
+    have h2 := h1 ⟨hp, hnq⟩
+    exfalso
+    exact h2
+
+
+
+
+
+
 /-!
 # Exercises
 -/
@@ -233,8 +279,40 @@ section hw
   /- Classical.em is not required: -/
   example : (p ∧ q) ∧ r ↔ p ∧ (q ∧ r) := sorry
   example : (p ∨ q) ∨ r ↔ p ∨ (q ∨ r) := sorry
-  example : p ∨ (q ∧ r) ↔ (p ∨ q) ∧ (p ∨ r) := sorry
-  example : (p → (q → r)) ↔ (p ∧ q → r) := sorry
+
+  example : p ∨ (q ∧ r) ↔ (p ∨ q) ∧ (p ∨ r) :=
+  Iff.intro
+    (λ h:p ∨ (q ∧ r)  =>
+      Or.elim h
+      (λ hp => ⟨ Or.inl hp, Or.inl hp⟩  )
+      (λ hqr => ⟨ Or.inr hqr.1, Or.inr hqr.2⟩  )
+    )
+    ( λ h : (p ∨ q) ∧ (p ∨ r) =>
+      let ⟨hpuq, hpur⟩ := h
+      Or.elim hpuq
+        (λ hp:p =>
+          Or.inl hp)
+        (λ hq:q =>
+        Or.elim hpur
+          (λ hp:p => Or.inl hp)
+          (λ hr:r => Or.inr ⟨ hq, hr⟩ )
+        )
+    )
+
+
+
+
+  example : (p → (q → r)) ↔ (p ∧ q → r) :=
+  Iff.intro
+    (
+      λ (h:(p → (q → r))) =>
+        λ hpq  =>  h hpq.1 hpq.2
+    )
+    (
+      λ (h: p ∧ q → r) =>
+        λ hp hq => h ⟨ hp,hq ⟩
+    )
+
   example : ((p ∨ q) → r) ↔ (p → r) ∧ (q → r) := sorry
   example : ¬(p ∨ q) ↔ ¬p ∧ ¬q := sorry
   example : ¬p ∨ ¬q → ¬(p ∧ q) := sorry
@@ -246,12 +324,28 @@ section hw
   example : p ∧ False ↔ False := sorry
   example : (p → q) → (¬q → ¬p) := sorry
 
+#check False.elim
+
   /- Classical.em is required: -/
   example : (p → q ∨ r) → ((p → q) ∨ (p → r)) := sorry
   example : ¬(p ∧ q) → ¬p ∨ ¬q := sorry
-  example : ¬(p → q) → p ∧ ¬q := sorry
-  example : (p → q) → (¬p ∨ q) := sorry
-  example : (¬q → ¬p) → (p → q) := sorry
-  example : p ∨ ¬p := sorry
-  example : (((p → q) → p) → p) := sorry
+  example : ¬(p → q) → p ∧ ¬q :=
+  λ h1 => ⟨Or.elim (Classical.em p) (fun hp => hp)
+                                    (fun hnp => False.elim (h1 (fun hp=> False.elim (hnp hp) )  ) )
+          ,(fun hq => False.elim (h1 (fun _ => hq) )) ⟩
+
+  example : (p → q) → (¬p ∨ q) :=
+  fun hpq => Or.elim (Classical.em p) (fun hp => Or.inr (hpq hp) ) (fun hnp => Or.inl hnp)
+
+  example : (¬q → ¬p) → (p → q) :=
+    fun hnqnp hp => Or.elim (Classical.em q) (fun hq => hq)
+                                             (fun hnq => False.elim ((hnqnp hnq) hp) )
+
+  example : p ∨ ¬p :=
+    Classical.em p
+
+  example : (((p → q) → p) → p) :=
+  fun h1 => Or.elim (Classical.em p) (fun hp => hp)
+                                     (fun hnp => h1 ( fun hp =>False.elim (hnp hp)))
+
 end hw
