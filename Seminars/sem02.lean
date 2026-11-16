@@ -314,20 +314,65 @@ section hw
     )
 
   example : ((p ∨ q) → r) ↔ (p → r) ∧ (q → r) := sorry
-  example : ¬(p ∨ q) ↔ ¬p ∧ ¬q := sorry
+  example : ¬(p ∨ q) ↔ ¬p ∧ ¬q := 
+  Iff.intro
+  ( λ h:¬(p ∨ q) => 
+  )
+  (
+  )
   example : ¬p ∨ ¬q → ¬(p ∧ q) := sorry
-  example : ¬(p ∧ ¬p) := sorry
-  example : p ∧ ¬q → ¬(p → q) := sorry
-  example : ¬p → (p → q) := sorry
-  example : (¬p ∨ q) → (p → q) := sorry
-  example : p ∨ False ↔ p := sorry
-  example : p ∧ False ↔ False := sorry
-  example : (p → q) → (¬q → ¬p) := sorry
+  example : ¬(p ∧ ¬p) := 
+    fun h => h.2 h.1  
+  example : ¬p ∨ ¬q → ¬(p ∧ q) := 
+    fun h1 h2 => 
+      h1.elim (fun hnp => hnp h2.1) (fun hnq => hnq h2.2)
+
+    
+  example : p ∧ ¬q → ¬(p → q) := 
+    fun hpnq hpaq  => hpnq.2 (hpaq hpnq.1)
+ 
+  example : ¬p → (p → q) := 
+    fun hnp hp  => False.elim (hnp hp) 
+
+  example : (¬p ∨ q) → (p → q) := 
+    fun hnpoq hp => 
+        Or.elim hnpoq (
+                      fun hnp => False.elim (hnp hp)
+                      )
+                      (
+                      fun hq => hq  
+                      )
+
+  example : p ∨ False ↔ p := 
+    Iff.intro (λ (hpof: p ∨ False)  => Or.elim hpof 
+                                         (λ hp:p => hp)
+                                         ( λ hf: False => False.elim hf  )  )
+              (λ hp => Or.inl hp )
+
+
+
+  example : p ∧ False ↔ False := 
+    Iff.intro (fun hpnf => hpnf.2 )
+              (fun hf => ⟨False.elim hf , hf ⟩)
+
+  example : (p → q) → (¬q → ¬p) := 
+    /- fun hpiq hnq => (fun hp:p  => hnq (hpiq hp) ) -/
+    fun hpiq hnq => hnq ∘ hpiq
 
 #check False.elim
 
   /- Classical.em is required: -/
-  example : (p → q ∨ r) → ((p → q) ∨ (p → r)) := sorry
+  example : (p → q ∨ r) → ((p → q) ∨ (p → r)) := 
+    fun hpiqor => Or.elim (Classical.em p) 
+                  (fun hp => Or.elim (hpiqor hp) 
+                              (fun hq => Or.inl (fun hp => hq)
+                              )
+                              (fun hr => Or.inr (fun hp => hr)
+                              )
+                  ) 
+                  (fun hnp => Or.inl (fun hp => False.elim (hnp hp)) ) 
+
+
   example : ¬(p ∧ q) → ¬p ∨ ¬q := sorry
   example : ¬(p → q) → p ∧ ¬q :=
   λ h1 => ⟨Or.elim (Classical.em p) (fun hp => hp)
