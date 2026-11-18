@@ -16,8 +16,18 @@ variable (α : Type) (P Q : α → Prop)
 example : (∀ x : α, P x) ∨ (∀ x : α, Q x) → ∀ x : α, P x ∨ Q x  :=
   λ h x ↦ Or.elim h (λ hP ↦ Or.inl (hP x)) (λ hQ ↦ Or.inr (hQ x))
 
+
+
+ 
 example : (∀ (x : α), P x ∧ Q x) ↔ (∀ x : α, P x) ∧ (∀ x : α, Q x) :=
-  sorry
+  Iff.intro 
+    ( fun h1 => 
+      ⟨ (fun x =>(h1 x).left) ,
+      (fun x => (h1 x).right)  ⟩ 
+    )
+    ( fun h2 x  =>
+      ⟨ (h2 x).left, h2.2 ⟩ 
+    )
 
 /- Existential Quantifier -/
 
