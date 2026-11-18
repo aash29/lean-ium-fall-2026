@@ -20,14 +20,9 @@ example : (∀ x : α, P x) ∨ (∀ x : α, Q x) → ∀ x : α, P x ∨ Q x  :
 
  
 example : (∀ (x : α), P x ∧ Q x) ↔ (∀ x : α, P x) ∧ (∀ x : α, Q x) :=
-  Iff.intro 
-    ( fun h1 => 
-      ⟨ (fun x =>(h1 x).left) ,
-      (fun x => (h1 x).right)  ⟩ 
-    )
-    ( fun h2 x  =>
-      ⟨ (h2 x).left, h2.2 ⟩ 
-    )
+  ⟨ fun  h  => ⟨ fun x => (h x).1 , fun x => (h x).2⟩,
+    fun  h  =>  (fun x =>  (And.intro (h.left x) (h.right x)))
+    ⟩
 
 /- Existential Quantifier -/
 
@@ -47,7 +42,14 @@ example : (∃ x : α, P x ∧ Q x) → (∃ x : α, P x) ∧ (∃ x : α, Q x) 
   λ ⟨x, hp, hq⟩ ↦ ⟨⟨x, hp⟩, ⟨x, hq⟩⟩
 
 example : (∃ x, P x ∨ Q x) ↔ (∃ x, P x) ∨ (∃ x, Q x) :=
-  sorry
+  Iff.intro (fun ⟨x,h⟩  => Or.elim h (fun h1 =>  Or.inl ( ⟨ x, h1⟩  ) ) (fun hq => Or.inr (⟨ x, hq ⟩)))
+            (fun  h => Or.elim h ( fun h1 =>
+                                  let ⟨x, hx⟩ := h1
+                                  Exists.intro x (Or.inl (hx ))  )
+                                 (fun h2 =>
+                                  let ⟨x, hx⟩ := h2
+                                  Exists.intro x (Or.inr (hx )) )
+                                 )
 
 
 /- Cantor theorem -/
